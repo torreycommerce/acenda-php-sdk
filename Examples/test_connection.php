@@ -2,8 +2,14 @@
 
 require_once __DIR__.'/../acenda.php';
 
+## Get Config 
+	$config = json_decode(file_get_contents("config.json"),true);
+	if (empty($config['client_id']) || empty($config['client_secret']) || empty($config['store_url']))
+		die("Configuration Issue!");
+##
+
 try {
-	$acenda = new Acenda('thiebaude@torreycommerce.com', '0e4540146806d2fe2ed920bc5cabf06a', 'http://admin.acendev/preview/928b8747da068b1d5bf7174fe832be9f', 'myTestPlugin');
+	$acenda = new Acenda($config['client_id'], $config['client_secret'], $config['store_url'], @$config['myTestPlugin']);
 	$acenda->performRequest('/order', 'GET', []);
 } catch (Exception $e) {
     echo 'Caught exception: ',  $e->getMessage(), "\n";
