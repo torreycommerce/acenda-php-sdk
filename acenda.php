@@ -18,10 +18,9 @@ class Acenda {
 		$this->initCurl();
 
 		$this->initConnection();
-		//$acenda
 	}
 
-	public function __destructor() {
+	public function __destruct() {
 		$this->closeCurl();
 	}
 
