@@ -43,15 +43,21 @@ class Acenda {
 	}
 	
 	public function performRequest($route, $type, $data) {
-		$data_json = json_encode($data);
+		$data_json = is_array($data) ? json_encode($data) : $data;
 
-		$url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route );
-
-		curl_setopt($this->ch, CURLOPT_URL, $url);
+		if ($type == 'GET') {
+			$url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route )."&query=".$data_json;
+			curl_setopt($this->ch, CURLOPT_URL, $url);
+		}
+		else {
+			$url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route );	
+			curl_setopt($this->ch, CURLOPT_URL, $url);
+			curl_setopt($this->ch, CURLOPT_POST, true);
+			curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data_json);
+		}
+		
 		curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($this->ch, CURLOPT_POST, true);
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, $type);
-		curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data_json);
 		curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(                                                                          
 		    'Content-Type: application/json',
 		    'Content-Length: ' . strlen($data_json))
