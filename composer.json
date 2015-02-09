@@ -1,0 +1,20 @@
+{
+    "name": "torreycommerce/acenda-php-sdk",
+    "description":"Acenda PHP SDK",
+    "keywords":["sdk","acenda","ecommerce", "api"],
+    "type":"sdk",
+    "authors":[
+        {
+            "name":"Thiebaud Ernstberger",
+            "email": "thiebaude@acenda.com"
+        },
+        {
+            "name":"Yoann Jaspar",
+            "email": "yoannj@acenda.com"
+        }
+    ],
+    "homepage": "http://acenda.com",
+    "require":{
+        "php":">=5.3.9"
+    }
+}
