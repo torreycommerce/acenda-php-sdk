@@ -4,9 +4,7 @@ class Acenda {
 	private $client_id;
 	private $client_secret;
 	private $store_url;
-
 	private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
-
 	private $ch;
 
 	public function __construct($client_id, $client_secret, $store_url,$plugin_name) {
@@ -16,7 +14,6 @@ class Acenda {
 		$this->plugin_name=$plugin_name;
 
 		$this->initCurl();
-
 		$this->initConnection();
 	}
 
@@ -25,31 +22,30 @@ class Acenda {
 	}
 
 	public function initConnection() {
-		list($httpCode, $httpJsonResponse) = $this->performRequest('/oauth/token', 'POST', array(	'client_id' => $this->client_id,
+		list($http_code, $http_json_response) = $this->performRequest('/oauth/token', 'POST', array(	'client_id' => $this->client_id,
 			             										'client_secret' => $this->client_secret, 
 			             										'grant_type' => 'client_credentials' 
 			             									)
 			            	);
-		$httpResponse = json_decode($httpJsonResponse,true);
-		switch ($httpCode) {
+		$http_response = json_decode($http_json_response,true);
+		switch ($http_code) {
 			case 200:
-				$this->token = $httpResponse;
+				$this->token = $http_response;
 				return true;
 				break;
 			default:
-				throw new Exception($httpCode.": ".$httpResponse['error']." - ".$httpResponse['error_description']);
+				throw new Exception($http_code.": ".$http_response['error']." - ".$http_response['error_description']);
 				break;
 		};
 	}
 	
-	public function performRequest($route, $type, $data) {
+	public function performRequest($route, $type, $data,$bypass_ssl=false) {
 		$data_json = is_array($data) ? json_encode($data) : $data;
 
 		if ($type == 'GET') {
 			$url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route )."&query=".$data_json;
 			curl_setopt($this->ch, CURLOPT_URL, $url);
-		}
-		else {
+		}else if($type == 'POST') {
 			$url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route );	
 			curl_setopt($this->ch, CURLOPT_URL, $url);
 			curl_setopt($this->ch, CURLOPT_POST, true);
@@ -57,18 +53,25 @@ class Acenda {
 		}
 		
 		curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, $type);
 		curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(                                                                          
 		    'Content-Type: application/json',
 		    'Content-Length: ' . strlen($data_json))
 		);
-		$httpResponse = curl_exec($this->ch);
-		$httpCode = curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
-		echo "\n";
-		echo "Url: ".$url."\n";
-		echo "Code: ".$httpCode."\n";
-		echo "Response: ".$httpResponse."\n";
-		return array($httpCode, $httpResponse);
+
+		if($bypass_ssl){
+			curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, false);
+		}
+
+		$http_response = curl_exec($this->ch);
+		$http_code = curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
+        if (curl_errno($this->ch)) { 
+        	$http_code = "400";
+			$curl_error['error'] = curl_errno($this->ch);
+        	$curl_error['error_description'] = curl_error($this->ch); 
+        	$http_response = json_encode($curl_error);
+        } 
+		return array($http_code, $http_response);
 	}
 
 	public function initCurl() {
@@ -79,30 +82,5 @@ class Acenda {
 		curl_close($this->ch);
 	}
 }
-/*
-	This Doesn't work cause file get content doesn't know how to deal with conenction errors.
-	It gives you a warning on error. (No Exception)
-	
-	public function initConnection() {
-		$result = file_get_contents(
-			$this->store_url.'/oauth/token', 
-			false, 
-			stream_context_create(array(
-				'http' => array(
-			     	'method' => 'POST',
-			        'header' => 'Content-type: application/json',
-			        'content' => json_encode(
-			            					array(	'client_id' => $this->client_id,
-			             							'client_secret' => $this->client_secret, 
-			             							'grant_type' => 'client_credentials' 
-			             						)
-			            					)		 
-			    )
-			))
-		);
-		var_dump($result);
-	}
-
-*/
 
 ?>

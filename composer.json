@@ -11,7 +11,12 @@
         {
             "name":"Yoann Jaspar",
             "email": "yoannj@acenda.com"
-        }
+        },
+        {
+            "name":"Ahmet Tok",
+            "email": "ahmett@acenda.com"
+        },        
+
     ],
     "homepage": "http://acenda.com",
     "require":{
