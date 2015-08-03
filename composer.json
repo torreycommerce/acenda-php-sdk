@@ -18,8 +18,14 @@
         }        
 
     ],
+
+    "autoload": {
+        "psr-4": {"Acenda\\": "src/"}
+    },
+
     "homepage": "http://acenda.com",
     "require":{
         "php":">=5.3.9"
     }
+
 }
