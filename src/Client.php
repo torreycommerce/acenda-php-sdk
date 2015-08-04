@@ -1,6 +1,7 @@
 <?php
+namespace Acenda;
 
-class Acenda {
+class Client {
     private $client_id;
     private $client_secret;
     private $store_url;
@@ -34,7 +35,7 @@ class Acenda {
                 return true;
                 break;
             default:
-                throw new Exception($http_code.": ".$http_response['error']." - ".$http_response['error_description']);
+                throw new AcendaException($http_code.": ".$http_response['error']." - ".$http_response['error_description']);
                 break;
         };
     }
