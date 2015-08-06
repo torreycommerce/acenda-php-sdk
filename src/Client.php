@@ -7,6 +7,7 @@ class Client {
     private $store_url;
     private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
     private $ch;
+    private $bypass_ssl=false;
 
     public function __construct($client_id, $client_secret, $store_url,$plugin_name) {
         $this->client_id=$client_id;
@@ -40,7 +41,7 @@ class Client {
         };
     }
     
-    public function performRequest($route, $type, $data,$bypass_ssl=false) {
+    public function performRequest($route, $type, $data) {
         $data_json = is_array($data) ? json_encode($data) : $data;
 
         if ($type == 'GET') {
@@ -59,7 +60,7 @@ class Client {
             'Content-Length: ' . strlen($data_json))
         );
 
-        if($bypass_ssl){
+        if($this->bypass_ssl){
             curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, false);
         }
