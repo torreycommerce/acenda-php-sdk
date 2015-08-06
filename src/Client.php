@@ -7,13 +7,14 @@ class Client {
     private $store_url;
     private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
     private $ch;
-    public $bypass_ssl=false;
+    public $bypass_ssl;
 
-    public function __construct($client_id, $client_secret, $store_url,$plugin_name) {
+    public function __construct($client_id, $client_secret, $store_url,$plugin_name,$bypass_ssl=false) {
         $this->client_id=$client_id;
         $this->client_secret=$client_secret;
         $this->store_url=$store_url;
         $this->plugin_name=$plugin_name;
+        $this->bypass_ssl=$bypass_ssl;
 
         $this->initCurl();
         $this->initConnection();
