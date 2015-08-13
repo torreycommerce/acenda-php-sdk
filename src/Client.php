@@ -7,21 +7,14 @@ class Client {
     private $store_url;
     private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
     private $ch;
-    public $bypass_ssl;
+    public $bypass_ssl=false;
 
-    public function __construct($client_id, $client_secret, $store_url,$plugin_name,$bypass_ssl=false) {
+    public function __construct($client_id, $client_secret, $store_url,$plugin_name) {
         $this->client_id=$client_id;
         $this->client_secret=$client_secret;
         $this->store_url=$store_url;
         $this->plugin_name=$plugin_name;
-        $this->bypass_ssl=$bypass_ssl;
-
-        $this->initCurl();
         $this->initConnection();
-    }
-
-    public function __destruct() {
-        $this->closeCurl();
     }
 
     public function initConnection() {
@@ -43,6 +36,7 @@ class Client {
     }
     
     public function performRequest($route, $type, $data) {
+        $this->ch = curl_init();
         $data_json = is_array($data) ? json_encode($data) : $data;
 
         if ($type == 'GET') {
@@ -74,15 +68,8 @@ class Client {
             $curl_error['error_description'] = curl_error($this->ch); 
             $http_response = json_encode($curl_error);
         } 
-        return array($http_code, $http_response);
-    }
-
-    public function initCurl() {
-        $this->ch = curl_init();
-    }
-
-    public function closeCurl() {
         curl_close($this->ch);
+        return array($http_code, $http_response);
     }
 }
 
