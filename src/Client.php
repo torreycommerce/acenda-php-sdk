@@ -82,11 +82,11 @@ class Client
         }
 
         if ($response->code != 200) {
-            //This is to catch a blank code.
+            //This is to catch a blank code. With httpful - this should never happen.
             $http_code = $response->code ? $response->code : 400;
             //There be an error!
             if ($response->body) {
-                $curl_error['error'] = isset($response->body->error) ? $response->body->error : $response->code;
+                $curl_error['error'] = isset($response->body->error) ? $response->body->error : $http_code;
                 $curl_error['error_description'] = isset($response->body->error_description) ? $response->body->error_description : 'There was an unknown error making the request.';
             }
             $http_response = json_encode($curl_error);
