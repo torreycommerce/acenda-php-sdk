@@ -68,10 +68,11 @@ class Client
 
 //        print_r($response);
         if ($response->code != 200) {
-            $http_code = 400;
+            //This is to catch a blank code.
+            $http_code = $response->code?$response->code:400;
             //There be an error!
-            $curl_error['error'] = $response->body->error;
-            $curl_error['error_description'] = $response->body->error_description;
+            $curl_error['error'] = $response->body->status;
+            $curl_error['error_description'] = $response->body->error;
             $http_response = json_encode($curl_error);
         } else {
             //Then it worked!
