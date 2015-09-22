@@ -1,7 +1,5 @@
 <?php
 namespace Acenda;
-//@todo Acenda SDK has an autoloader - implement using the existing autoloader.
-require __DIR__ . '/../vendor/autoload.php';
 use Httpful;
 
 class Client
