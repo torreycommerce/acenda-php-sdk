@@ -3,6 +3,11 @@ namespace Acenda;
 
 use Httpful;
 
+/**
+ * Class Client
+ * Primary client for interacting with the Acenda SDK from PHP.
+ * @package Acenda
+ */
 class Client
 {
     private $client_id;
@@ -12,10 +17,10 @@ class Client
     public $bypass_ssl = false;
 
     /**
-     * @param $client_id
-     * @param $client_secret
-     * @param $store_url
-     * @param $plugin_name
+     * @param $client_id Developer ID, usually in form of user@domain.com
+     * @param $client_secret Developer key provided by Acenda.
+     * @param $store_url The URL of the store we are working with.
+     * @param $plugin_name Friendly name for logs etc. I don't think this is implemented.
      * @throws AcendaException
      */
     public function __construct($client_id, $client_secret, $store_url, $plugin_name)
