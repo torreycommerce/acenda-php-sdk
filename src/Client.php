@@ -9,7 +9,6 @@ class Client
     private $client_secret;
     private $store_url;
     private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
-//    private $ch;
     public $bypass_ssl = false;
 
     /**
@@ -60,13 +59,9 @@ class Client
      */
     public function performRequest($route, $type, $data)
     {
-        /*
-         * So, httpful defaults to strict ssl off - so we would really want to invert this logic here.
-         * @todo Talk to Ahmet to see what the use case was for this - and if it needs to remain. I bet it's for local dev testing.
-         */
-        if ($this->bypass_ssl) {
-//            curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
-//            curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, false);
+        $httpful = Httpful\Request::init();
+        if (!$this->bypass_ssl) {
+            $httpful = $httpful->withStrictSSL();
         }
         $data_json = is_array($data) ? json_encode($data) : $data;
         $url = $this->store_url . (!empty($this->token['access_token']) ? "/api" . $route . "?access_token=" . $this->token['access_token'] : $route);
@@ -74,25 +69,26 @@ class Client
             case 'GET':
                 //Append the query.
                 $url .= "&query=" . $data_json;
-                $response = Httpful\Request::get($url)->send();
+                $response = $httpful->get($url)->send();
                 break;
             case 'PUT':
-                $response = Httpful\Request::put($url, $data_json)->sendsJson()->send();
+                $response = $httpful->put($url, $data_json)->sendsJson()->send();
                 break;
             case 'POST':
-                $response = Httpful\Request::post($url, $data_json)->sendsJson()->send();
+                $response = $httpful->post($url, $data_json)->sendsJson()->send();
                 break;
             default:
                 throw new AcendaException('Verb ' . $type . ' Not Understood');
         }
 
-//        print_r($response);
         if ($response->code != 200) {
             //This is to catch a blank code.
             $http_code = $response->code ? $response->code : 400;
             //There be an error!
-            $curl_error['error'] = $response->body->status;
-            $curl_error['error_description'] = $response->body->error;
+            if ($response->body) {
+                $curl_error['error'] = isset($response->body->error) ? $response->body->error : $response->code;
+                $curl_error['error_description'] = isset($response->body->error_description) ? $response->body->error_description : 'There was an unknown error making the request.';
+            }
             $http_response = json_encode($curl_error);
         } else {
             //Then it worked! We aren't using any of the httpful response magicalness, so return it raw.
