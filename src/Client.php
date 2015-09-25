@@ -32,6 +32,9 @@ class Client
         $this->initConnection();
     }
 
+    public function getToken(){
+        return $this->token;
+    }
 
     /**
      * @return bool
