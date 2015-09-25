@@ -1,80 +1,110 @@
 <?php
 namespace Acenda;
 
-class Client {
+use Httpful;
+
+/**
+ * Class Client
+ * Primary client for interacting with the Acenda SDK from PHP.
+ * @package Acenda
+ */
+class Client
+{
     private $client_id;
     private $client_secret;
     private $store_url;
     private $token = ['access_token' => '', 'expires_in' => '', 'token_type' => '', 'scope' => ''];
-    private $ch;
-    public $bypass_ssl=false;
+    public $bypass_ssl = false;
 
-    public function __construct($client_id, $client_secret, $store_url,$plugin_name) {
-        $this->client_id=$client_id;
-        $this->client_secret=$client_secret;
-        $this->store_url=$store_url;
-        $this->plugin_name=$plugin_name;
+    /**
+     * @param $client_id Developer ID, usually in form of user@domain.com
+     * @param $client_secret Developer key provided by Acenda.
+     * @param $store_url The URL of the store we are working with.
+     * @param $plugin_name Friendly name for logs etc. I don't think this is implemented.
+     * @throws AcendaException
+     */
+    public function __construct($client_id, $client_secret, $store_url, $plugin_name)
+    {
+        $this->client_id = $client_id;
+        $this->client_secret = $client_secret;
+        $this->store_url = $store_url;
+        $this->plugin_name = $plugin_name;
         $this->initConnection();
     }
 
-    public function getToken(){
-        return $this->token;
-    }
 
-    public function initConnection() {
-        list($http_code, $http_json_response) = $this->performRequest('/oauth/token', 'POST', array(    'client_id' => $this->client_id,
-                                                                'client_secret' => $this->client_secret,
-                                                                'grant_type' => 'client_credentials'
-                                                            )
-                            );
-        $http_response = json_decode($http_json_response,true);
+    /**
+     * @return bool
+     * @throws AcendaException
+     */
+    public function initConnection()
+    {
+        list($http_code, $http_json_response) = $this->performRequest('/oauth/token', 'POST', array('client_id' => $this->client_id,
+                'client_secret' => $this->client_secret,
+                'grant_type' => 'client_credentials'
+            )
+        );
+        $http_response = json_decode($http_json_response, true);
         switch ($http_code) {
             case 200:
                 $this->token = $http_response;
                 return true;
                 break;
             default:
-                throw new AcendaException($http_code.": ".$http_response['error']." - ".$http_response['error_description']);
-                break;
+                throw new AcendaException($http_code . ": " . $http_response['error'] . " - " . $http_response['error_description']);
         };
     }
 
-    public function performRequest($route, $type, $data) {
-        $this->ch = curl_init();
+    /**
+     * @param $route
+     * @param $type
+     * @param $data
+     * @return array
+     * @throws AcendaException
+     * @throws Httpful\Exception\ConnectionErrorException
+     */
+    public function performRequest($route, $type, $data)
+    {
+        $httpful = Httpful\Request::init();
+        if (!$this->bypass_ssl) {
+            $httpful = $httpful->withStrictSSL();
+        }
         $data_json = is_array($data) ? json_encode($data) : $data;
-
-        if ($type == 'GET') {
-            $url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route )."&query=".$data_json;
-        }else if($type == 'POST') {
-            $url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route );
-            curl_setopt($this->ch, CURLOPT_POST, true);
-            curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data_json);
-            curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($data_json))
-            );
+        $url = $this->store_url . (!empty($this->token['access_token']) ? "/api" . $route . "?access_token=" . $this->token['access_token'] : $route);
+        switch (strtoupper($type)) {
+            case 'GET':
+                //Append the query.
+                $url .= "&query=" . $data_json;
+                $response = $httpful->get($url)->send();
+                break;
+            case 'PUT':
+                $response = $httpful->put($url, $data_json)->sendsJson()->send();
+                break;
+            case 'POST':
+                $response = $httpful->post($url, $data_json)->sendsJson()->send();
+                break;
+            default:
+                throw new AcendaException('Verb ' . $type . ' Not Understood');
         }
 
-        curl_setopt($this->ch, CURLOPT_URL, $url);
-        curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, 1);
-
-
-        if($this->bypass_ssl){
-            curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, false);
-        }
-
-        $http_response = curl_exec($this->ch);
-        $http_code = curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
-        if (curl_errno($this->ch)) {
-            $http_code = "400";
-            $curl_error['error'] = curl_errno($this->ch);
-            $curl_error['error_description'] = curl_error($this->ch);
+        if ($response->code != 200) {
+            //This is to catch a blank code. With httpful - this should never happen.
+            $http_code = $response->code ? $response->code : 400;
+            //There be an error!
+            if ($response->body) {
+                $curl_error['error'] = isset($response->body->error) ? $response->body->error : $http_code;
+                $curl_error['error_description'] = isset($response->body->error_description) ? $response->body->error_description : 'There was an unknown error making the request.';
+            }
             $http_response = json_encode($curl_error);
+        } else {
+            //Then it worked! We aren't using any of the httpful response magicalness, so return it raw.
+            /*
+             * If someone is interested in said magicalness, it can basically type juggle the response into a stdClass,
+             * So if you have JSON coming back - it comes back json_decoded. If you have XML, it also comes back as stdClass.
+             */
+            $http_response = $response->raw_body;
+            $http_code = $response->code;
         }
-        curl_close($this->ch);
         return array($http_code, $http_response);
     }
 }
-
-?>
