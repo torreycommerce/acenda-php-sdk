@@ -17,10 +17,14 @@ class Client {
         $this->initConnection();
     }
 
+    public function getToken(){
+        return $this->token;
+    }
+
     public function initConnection() {
         list($http_code, $http_json_response) = $this->performRequest('/oauth/token', 'POST', array(    'client_id' => $this->client_id,
-                                                                'client_secret' => $this->client_secret, 
-                                                                'grant_type' => 'client_credentials' 
+                                                                'client_secret' => $this->client_secret,
+                                                                'grant_type' => 'client_credentials'
                                                             )
                             );
         $http_response = json_decode($http_json_response,true);
@@ -34,7 +38,7 @@ class Client {
                 break;
         };
     }
-    
+
     public function performRequest($route, $type, $data) {
         $this->ch = curl_init();
         $data_json = is_array($data) ? json_encode($data) : $data;
@@ -42,10 +46,10 @@ class Client {
         if ($type == 'GET') {
             $url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route )."&query=".$data_json;
         }else if($type == 'POST') {
-            $url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route ); 
+            $url = $this->store_url.(!empty($this->token['access_token']) ? "/api".$route."?access_token=".$this->token['access_token'] : $route );
             curl_setopt($this->ch, CURLOPT_POST, true);
             curl_setopt($this->ch, CURLOPT_POSTFIELDS, $data_json);
-            curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(                                                                          
+            curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
                 'Content-Length: ' . strlen($data_json))
             );
@@ -62,12 +66,12 @@ class Client {
 
         $http_response = curl_exec($this->ch);
         $http_code = curl_getinfo($this->ch, CURLINFO_HTTP_CODE);
-        if (curl_errno($this->ch)) { 
+        if (curl_errno($this->ch)) {
             $http_code = "400";
             $curl_error['error'] = curl_errno($this->ch);
-            $curl_error['error_description'] = curl_error($this->ch); 
+            $curl_error['error_description'] = curl_error($this->ch);
             $http_response = json_encode($curl_error);
-        } 
+        }
         curl_close($this->ch);
         return array($http_code, $http_response);
     }
