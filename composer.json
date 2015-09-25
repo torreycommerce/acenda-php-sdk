@@ -15,7 +15,11 @@
         {
             "name":"Ahmet Tok",
             "email": "ahmett@acenda.com"
-        }        
+        },
+        {
+        "name":"Brandon Allhands",
+        "email":"brandon@brandonallhands.com"
+        }
 
     ],
 
@@ -25,7 +29,8 @@
 
     "homepage": "http://acenda.com",
     "require":{
-        "php":">=5.3.9"
+        "php":">=5.3.9",
+        "nategood/httpful": "^0.2.19"
     }
 
 }
