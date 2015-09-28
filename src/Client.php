@@ -85,25 +85,41 @@ class Client
             default:
                 throw new AcendaException('Verb ' . $type . ' Not Understood');
         }
-
-        if ($response->code != 200) {
-            //This is to catch a blank code. With httpful - this should never happen.
-            $http_code = $response->code ? $response->code : 400;
-            //There be an error!
-            if ($response->body) {
-                $curl_error['error'] = isset($response->body->error) ? $response->body->error : $http_code;
-                $curl_error['error_description'] = isset($response->body->error_description) ? $response->body->error_description : 'There was an unknown error making the request.';
-            }
-            $http_response = json_encode($curl_error);
-        } else {
-            //Then it worked! We aren't using any of the httpful response magicalness, so return it raw.
-            /*
-             * If someone is interested in said magicalness, it can basically type juggle the response into a stdClass,
-             * So if you have JSON coming back - it comes back json_decoded. If you have XML, it also comes back as stdClass.
-             */
-            $http_response = $response->raw_body;
-            $http_code = $response->code;
+        //Default in this switch is failure. All failures should fall through to default.
+        switch ($response->code) {
+            case 200:
+            case 201:
+                return $this->requestSuccess($response);
+            default:
+                return $this->requestFailure($response);
         }
+    }
+
+    /**
+     * @param Httpful\Response $response
+     * @return array
+     */
+    protected function requestSuccess(Httpful\Response $response)
+    {
+        $http_response = $response->raw_body;
+        $http_code = $response->code;
         return array($http_code, $http_response);
     }
+
+    /**
+     * @param Httpful\Response $response
+     * @return array
+     */
+    protected function requestFailure(Httpful\Response $response)
+    {
+        $http_code = $response->code ? $response->code : 400;
+        $curl_error = [];
+        if ($response->body) {
+            $curl_error['error'] = isset($response->body->error) ? $response->body->error : $http_code;
+            $curl_error['error_description'] = isset($response->body->error_description) ? $response->body->error_description : 'There was an unknown error making the request.';
+        }
+        $http_response = json_encode($curl_error);
+        return array($http_code, $http_response);
+    }
+
 }
