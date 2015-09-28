@@ -32,6 +32,10 @@ class Client
         $this->initConnection();
     }
 
+    public function getToken(){
+        return $this->token;
+    }
+
     /**
      * @return bool
      * @throws AcendaException
@@ -121,5 +125,4 @@ class Client
         $http_response = json_encode($curl_error);
         return array($http_code, $http_response);
     }
-
 }
