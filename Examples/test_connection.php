@@ -10,7 +10,12 @@ require_once __DIR__.'/../acenda.php';
 
 try {
 	$acenda = new Acenda($config['client_id'], $config['client_secret'], $config['store_url'], @$config['myTestPlugin']);
-	$acenda->performRequest('/order', 'GET', []);
+	$acenda->performRequest('/product', 'GET', [
+        'query' => json_encode(["name":["$regex":"*"]]);
+        'sort' => "date_modified:1",
+        "limit" => 10,
+        "page" => 1
+    ]);
 } catch (Exception $e) {
     echo 'Caught exception: ',  $e->getMessage(), "\n";
 }
