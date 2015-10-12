@@ -21,7 +21,7 @@ class Authentication{
      * @return bool
      */
     private static function generation(){
-        if (!static::$instance || $instance->isExpired()){
+        if (empty(static::$instance) || static::$instance->expires >= date("U")){
             static::$instance = new Authentication();
         }
 
