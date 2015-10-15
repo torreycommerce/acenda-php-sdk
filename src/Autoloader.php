@@ -12,7 +12,7 @@ class Autoloader
     /**
      * @param string $baseDirectory Base directory where the source files are located.
      */
-    public function __construct($baseDirectory = __DIR__)
+    protected function __construct($baseDirectory = __DIR__)
     {
         $this->directory = $baseDirectory;
         $this->prefix = __NAMESPACE__.'\\';
