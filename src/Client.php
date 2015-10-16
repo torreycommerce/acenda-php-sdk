@@ -17,7 +17,7 @@ class Client
     private $store_url;
     private $acenda_url;
     private $httpful;
-    
+
 
     /**
      * @param $client_id Developer ID, usually in form of user@domain.com
@@ -44,7 +44,6 @@ class Client
      * @return bool
      */
     private function generateStoreUrl($name){
-        $_SERVER['ACENDA_MODE'] = "acendavm";
         switch((isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null)){
             case "acendavm":
                 $this->store_url = "http://admin.acendev/preview/".md5($name)."/api";
@@ -71,16 +70,16 @@ class Client
         $index = 0;
         foreach($params as $k => $v){
             if ($index >= 1){ $parameters .= "&"; }
-            
+
             if (is_array($v)){ $parameters .= ($k."=".urlencode(json_encode($v))); }
-            else{ $parameters .= ($k."=".urlencode($v)); } 
+            else{ $parameters .= ($k."=".urlencode($v)); }
             $index++;
         }
 
         $route = $this->store_url;
         $route .= ($uri[0] == '/') ? $uri : '/'.$uri;
         $route .= (strpos($uri, '?') == false ? '?' : '&').$parameters;
-        
+
         return $route;
     }
 
