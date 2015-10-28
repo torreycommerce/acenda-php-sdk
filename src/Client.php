@@ -88,7 +88,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function get($route, $data){
+    public function get($route, $data=[]){
         return $this->performRequest($route, 'GET', $data);
     }
 
@@ -97,7 +97,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function post($route, $data){
+    public function post($route, $data=[]){
         return $result = $this->performRequest($route, 'POST', $data);
     }
 
@@ -106,7 +106,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function put($route, $data){
+    public function put($route, $data=[]){
         return $this->performRequest($route, 'PUT', $data);
     }
 
@@ -115,7 +115,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function delete($route, $data){
+    public function delete($route, $data=[]){
         return $this->performRequest($route, 'DELETE', $data);
     }
 
