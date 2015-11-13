@@ -88,7 +88,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function get($route, $data){
+    public function get($route, $data=[]){
         return $this->performRequest($route, 'GET', $data);
     }
 
@@ -97,7 +97,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function post($route, $data){
+    public function post($route, $data=[]){
         return $result = $this->performRequest($route, 'POST', $data);
     }
 
@@ -106,7 +106,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function put($route, $data){
+    public function put($route, $data=[]){
         return $this->performRequest($route, 'PUT', $data);
     }
 
@@ -115,7 +115,7 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function delete($route, $data){
+    public function delete($route, $data=[]){
         return $this->performRequest($route, 'DELETE', $data);
     }
 
@@ -124,13 +124,13 @@ class Client
      * @param $type
      * @param $data
      * @return array
-     * @throws Exception
+     * @throws \Exception
      * @throws Httpful\Exception\ConnectionErrorException
-     * @throws Exception
+     * @throws \Exception
      */
     private function performRequest($route, $type, $data=[])
     {
-        if (!is_array($data)){ throw new Exception('Wrong parameters provided'); }
+        if (!is_array($data)){ throw new \Exception('Wrong parameters provided'); }
 
         switch (strtoupper($type)) {
             case 'GET':
@@ -150,7 +150,7 @@ class Client
                 $response = $this->httpful->delete($url)->sendsJson()->send();
                 break;
             default:
-                throw new Exception('Verb not recognized yet');
+                throw new \Exception('Verb not recognized yet');
         }
 
         //Default in this switch is failure. All failures should fall through to default.
