@@ -105,7 +105,7 @@ class Authentication{
 
     protected function __construct(){
         if (empty(static::$client_id) || empty(static::$client_secret) || empty(static::$httpful)){
-            throw new Exception("The Authentication class must be initialized before instanciation.");
+            throw new \Exception("The Authentication class must be initialized before instanciation.");
         }else{
             $response = static::$httpful->post($this->getUrl().'/oauth/token', json_encode([
                 'client_id' => static::$client_id,
