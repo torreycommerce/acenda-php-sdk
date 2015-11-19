@@ -1,8 +1,6 @@
 <?php
 namespace Acenda;
 
-date_default_timezone_set('GMT');
-
 use Httpful;
 
 class Authentication{
