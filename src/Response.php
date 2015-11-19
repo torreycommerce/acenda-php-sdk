@@ -1,8 +1,6 @@
 <?php
 namespace Acenda;
 
-date_default_timezone_set('GMT');
-
 use Httpful;
 
 /**
@@ -13,7 +11,7 @@ use Httpful;
 class Response{
     public $code;
     public $body;
-    
+
     /**
      * @param Httpful\Response $response
      */
