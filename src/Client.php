@@ -34,8 +34,11 @@ class Client
         }
 
         Authentication::init($client_id, $client_secret, $this->httpful);
-
         $this->generateStoreUrl($store_name);
+    }
+
+    private function refresh(){
+        Authentication::refresh();
     }
 
     /**
@@ -117,6 +120,7 @@ class Client
         return $this->performRequest($route, 'DELETE', $data);
     }
 
+
     /**
      * @param $route
      * @param $type
@@ -126,9 +130,9 @@ class Client
      * @throws Httpful\Exception\ConnectionErrorException
      * @throws \Exception
      */
-    private function performRequest($route, $type, $data=[])
-    {
+    private function performRequest($route, $type, $data=[]){
         if (!is_array($data)){ throw new \Exception('Wrong parameters provided'); }
+        if (Authentication::getExpiration() <= (date("U") - 10)){ $this->refresh(); }
 
         switch (strtoupper($type)) {
             case 'GET':
