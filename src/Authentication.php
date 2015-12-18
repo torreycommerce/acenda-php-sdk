@@ -43,6 +43,14 @@ class Authentication{
     /**
      * @return token
      */
+    public static function getInstance(){
+        static::generation();
+        return static::$instance;
+    }
+
+    /**
+     * @return token
+     */
     public static function getToken(){
         static::generation();
         return static::$instance->access_token;
@@ -101,24 +109,42 @@ class Authentication{
         return (null);
     }
 
+    /**
+    * @throws AcendaException
+    * @return boolean
+    */
+    public static function refresh(){
+        static::generation();
+        $this->generateToken();
+
+        return true;
+    }
+
+    /**
+    * @throws AcendaException
+    */
+    private function generateToken(){
+        $response = static::$httpful->post($this->getUrl().'/oauth/token', json_encode([
+            'client_id' => static::$client_id,
+            'client_secret' => static::$client_secret,
+            'grant_type' => 'client_credentials'
+        ]))->sendsJson()->send();
+
+        switch ($response->code){
+            case 200:
+                $this->handleSuccess($response->body);
+                return true;
+                break;
+            default:
+                throw new AcendaException($response->code, $response->body);
+        }
+    }
+
     protected function __construct(){
         if (empty(static::$client_id) || empty(static::$client_secret) || empty(static::$httpful)){
             throw new \Exception("The Authentication class must be initialized before instanciation.");
         }else{
-            $response = static::$httpful->post($this->getUrl().'/oauth/token', json_encode([
-                'client_id' => static::$client_id,
-                'client_secret' => static::$client_secret,
-                'grant_type' => 'client_credentials'
-            ]))->sendsJson()->send();
-
-            switch ($response->code){
-                case 200:
-                    $this->handleSuccess($response->body);
-                    return true;
-                    break;
-                default:
-                    throw new AcendaException($response->code, $response->body);
-            }
+            $this->generateToken();
         }
     }
 }
