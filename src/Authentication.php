@@ -115,7 +115,7 @@ class Authentication{
     */
     public static function refresh(){
         static::generation();
-        $this->generateToken();
+        static::generateToken();
 
         return true;
     }
