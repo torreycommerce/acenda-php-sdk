@@ -19,7 +19,9 @@ class Authentication{
      * @return bool
      */
     private static function generation(){
-        if (empty(static::$instance) || static::$instance->expires >= date("U")){
+        //Give us 10 seconds of padding, which should be plenty. This method is called every request, so the token
+        //should be used within microseconds of this method.
+        if (empty(static::$instance) || static::$instance->expires <= time() + 10){
             static::$instance = new Authentication();
         }
 
