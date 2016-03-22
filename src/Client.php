@@ -98,8 +98,8 @@ class Client
     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
     * @return Acenda\Response
     */
-    public function post($route, $data=[]){
-        return $result = $this->performRequest($route, 'POST', $data);
+    public function post($route, $data=[],$files=[]){
+        return $result = $this->performRequest($route, 'POST', $data, $files);
     }
 
     /**
@@ -130,7 +130,7 @@ class Client
      * @throws Httpful\Exception\ConnectionErrorException
      * @throws \Exception
      */
-    private function performRequest($route, $type, $data=[]){
+    private function performRequest($route, $type, $data=[],$files=[]){
         if (!is_array($data)){ throw new \Exception('Wrong parameters provided'); }
         if (Authentication::getExpiration() <= (date("U") - 10)){ $this->refresh(); }
 
@@ -145,7 +145,11 @@ class Client
                 break;
             case 'POST':
                 $url = $this->generate_query($route);
-                $response = $this->httpful->post($url, json_encode($data))->sendsJson()->send();
+                if(count($files)) {
+                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->send();
+                } else {
+                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->send();
+                }
                 break;
             case 'DELETE':
                 $url = $this->generate_query($route, $data);
