@@ -87,6 +87,17 @@ try {
 }
 ```
 
+## Examples:
+
+### File upload
+
+```
+   $acenda->post('/import/upload', [
+        'model'=>'variant'
+    ],['/tmp/tempfile.csv']);
+
+```
+
 --------
 
 ## Contributing
