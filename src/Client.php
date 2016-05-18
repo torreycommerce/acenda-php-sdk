@@ -15,6 +15,7 @@ class Client
     private $store_url;
     private $acenda_url;
     private $httpful;
+    private $throttle_iteration=1;
 
 
     /**
@@ -130,7 +131,7 @@ class Client
      * @throws Httpful\Exception\ConnectionErrorException
      * @throws \Exception
      */
-    private function performRequest($route, $type, $data=[],$files=[]){
+    private function performRequest($route, $type, $data=[],$files=[],$handle_throttle=true){
         if (!is_array($data)){ throw new \Exception('Wrong parameters provided'); }
         if (Authentication::getExpiration() <= (date("U") - 10)){ $this->refresh(); }
 
@@ -163,9 +164,23 @@ class Client
         switch ($response->code) {
             case 200:
             case 201:
+                $this->throttle_iteration = 1;
                 return new Response($response);
+            case 429:
+                if($handle_throttle){
+                    $this->throttle();
+                    $this->throttle_iteration++;
+                    $this->performRequest($route, $type, $data=[],$files=[],$handle_throttle);
+                }else{
+                    return new Response($response);
+                }
             default:
                 return new Response($response);
         }
+    }
+
+    private function throttle(){
+        sleep(pow(2,$this->throttle_iteration));
+
     }
 }
