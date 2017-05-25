@@ -41,7 +41,7 @@ After instantiation, access all the API of your store:
 ```php
 <?php
 // Autoloading of your dependecies.
-
+include('vendor/autoload.php');
 try {
     $acenda = new Acenda\Client(
         _CLIENT_ID_,
