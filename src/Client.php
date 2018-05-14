@@ -16,6 +16,7 @@ class Client
     private $acenda_url;
     private $httpful;
     private $throttle_iteration=1;
+    private $throttleData = [];
 
 
     /**
@@ -159,7 +160,17 @@ class Client
             default:
                 throw new \Exception('Verb not recognized yet');
         }
-
+        if($handle_throttle) {
+            $throttleData= [];
+            if(!empty($response->headers->toArray()['x-acenda-api-throttle-call-limit'])) {
+                $callLimit = explode('/',$response->headers->toArray()['x-acenda-api-throttle-call-limit']);
+                $throttleData['capacity']= $callLimit[1];
+                $throttleData['drops']=$callLimit[0];
+                $throttleData['leak_rate']= $response->headers->toArray()['x-acenda-api-throttle-leak-rate'];
+                $this->throttleData = $throttleData;
+            }
+            $this->throttle();  
+        } 
         //Default in this switch is failure. All failures should fall through to default.
         switch ($response->code) {
             case 200:
@@ -168,9 +179,8 @@ class Client
                 return new Response($response);
             case 429:
                 if($handle_throttle){
-                    $this->throttle();
                     $this->throttle_iteration++;
-                    $this->performRequest($route, $type, $data=[],$files=[],$handle_throttle);
+                    return $this->performRequest($route, $type, $data,$files,$handle_throttle);
                 }else{
                     return new Response($response);
                 }
@@ -180,7 +190,10 @@ class Client
     }
 
     private function throttle(){
-        sleep(pow(2,$this->throttle_iteration));
-
+        if(isset($this->throttleData['leak_rate'])) {
+            $td = $this->throttleData;
+            $sleepMicro = ceil(((50000/($td['leak_rate'])) * ($td['drops']))) * $this->throttle_iteration;
+            usleep($sleepMicro);
+        }        
     }
 }
