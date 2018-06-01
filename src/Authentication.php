@@ -96,7 +96,11 @@ class Authentication{
      * @return URL
      */
     private function getUrl(){
-        switch(isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null){
+        $acenda_mode = isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null;
+        if(empty($acenda_mode)){
+            $acenda_mode = getenv('ACENDA_MODE');
+        }
+        switch($acenda_mode){
             case "acendavm":
                 return "http://acenda.acendev";
                 break;

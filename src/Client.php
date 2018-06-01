@@ -47,7 +47,11 @@ class Client
      * @return bool
      */
     private function generateStoreUrl($name){
-        switch((isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null)){
+        $acenda_mode = isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null;
+        if(empty($acenda_mode)){
+            $acenda_mode = getenv('ACENDA_MODE');
+        }
+        switch($acenda_mode){
             case "acendavm":
                 $this->store_url = "http://admin.acendev/preview/".md5($name)."/api";
                 break;
@@ -169,8 +173,8 @@ class Client
                 $throttleData['leak_rate']= $response->headers->toArray()['x-acenda-api-throttle-leak-rate'];
                 $this->throttleData = $throttleData;
             }
-            $this->throttle();  
-        } 
+            $this->throttle();
+        }
         //Default in this switch is failure. All failures should fall through to default.
         switch ($response->code) {
             case 200:
@@ -194,6 +198,6 @@ class Client
             $td = $this->throttleData;
             $sleepMicro = ceil(((50000/($td['leak_rate'])) * ($td['drops']))) * $this->throttle_iteration;
             usleep($sleepMicro);
-        }        
+        }
     }
 }
