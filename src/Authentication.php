@@ -35,6 +35,7 @@ class Authentication{
      * @return bool
      */
     public static function init($client_id, $client_secret, Httpful\Request $httpful){
+        static::$instance = null;
         static::$client_id = $client_id;
         static::$client_secret = $client_secret;
         static::$httpful = $httpful;
