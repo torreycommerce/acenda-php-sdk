@@ -72,7 +72,7 @@ class Authentication{
      */
     public static function getScope(){
         static::generation();
-        return split('|', static::$instance->scope);
+        return explode('|', static::$instance->scope);
     }
 
     /**
