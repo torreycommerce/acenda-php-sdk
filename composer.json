@@ -2,6 +2,7 @@
     "name": "torreycommerce/acenda-php-sdk",
     "description":"Acenda PHP SDK",
     "keywords":["sdk","acenda","ecommerce", "api"],
+    "license": "MIT",
     "type":"sdk",
     "authors":[
         {
@@ -29,8 +30,9 @@
 
     "homepage": "http://acenda.com",
     "require":{
-        "php":">=5.3.9",
-        "nategood/httpful": "^0.2.19"
+        "php":">=5.4",
+        "nategood/httpful": "^0.2.19",
+      "ext-json": "*"
     }
 
 }
