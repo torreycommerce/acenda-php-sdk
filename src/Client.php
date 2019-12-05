@@ -1,4 +1,5 @@
 <?php
+
 namespace Acenda;
 
 use Httpful;
@@ -15,16 +16,18 @@ class Client
     private $store_url;
     private $acenda_url;
     private $httpful;
-    private $throttle_iteration=1;
+    private $throttle_iteration = 1;
+    private $auth_cache = [];
+    private $authentication;
 
 
     /**
-     * @param $client_id Developer ID, usually in form of user@domain.com
-     * @param $client_secret Developer key provided by Acenda.
-     * @param $store_url The URL of the store we are working with.
-     * @param $plugin_name Friendly name for localeconv(oid)gs etc. I don't think this is implemented.
-     * @param $bypass_ssl Rather the SSL verification should be strict or not.
-     * @throws AcendaException
+     * Client constructor.
+     * @param $client_id
+     * @param $client_secret
+     * @param $store_name
+     * @param bool $bypass_ssl
+     * @throws \Exception
      */
     public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false)
     {
@@ -33,28 +36,29 @@ class Client
         if (!$bypass_ssl) {
             $this->httpful = $this->httpful->withStrictSSL();
         }
-
-        Authentication::init($client_id, $client_secret, $this->httpful);
+        $this->authentication = new Authentication($client_id, $client_secret);
         $this->generateStoreUrl($store_name);
     }
 
-    private function refresh(){
-        Authentication::refresh();
+    private function refresh()
+    {
+        $this->authentication->refresh();
     }
 
     /**
      * @return bool
      */
-    private function generateStoreUrl($name){
-        switch((isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null)){
+    private function generateStoreUrl($name)
+    {
+        switch ((isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null)) {
             case "acendavm":
-                $this->store_url = "http://admin.acendev/preview/".md5($name)."/api";
+                $this->store_url = "http://admin.acendev/preview/" . md5($name) . "/api";
                 break;
             case "development":
-                $this->store_url = "https://admin.acenda.devserver/preview/".md5($name)."/api";
+                $this->store_url = "https://admin.acenda.devserver/preview/" . md5($name) . "/api";
                 break;
             default:
-                $this->store_url = "https://admin.acenda.com/preview/".md5($name)."/api";
+                $this->store_url = "https://admin.acenda.com/preview/" . md5($name) . "/api";
                 break;
         }
 
@@ -65,59 +69,69 @@ class Client
      * @return bool
      * @throws AcendaException
      */
-    private function generate_query($uri, $params=[]){
-        $params = array_merge(['access_token' => Authentication::getToken()], $params);
+    private function generate_query($uri, $params = [])
+    {
+        $params = array_merge(['access_token' => $this->authentication->getToken()], $params);
 
         $parameters = "";
         $index = 0;
-        foreach($params as $k => $v){
-            if ($index >= 1){ $parameters .= "&"; }
+        foreach ($params as $k => $v) {
+            if ($index >= 1) {
+                $parameters .= "&";
+            }
 
-            if (is_array($v)){ $parameters .= ($k."=".urlencode(json_encode($v))); }
-            else{ $parameters .= ($k."=".urlencode($v)); }
+            if (is_array($v)) {
+                $parameters .= ($k . "=" . urlencode(json_encode($v)));
+            } else {
+                $parameters .= ($k . "=" . urlencode($v));
+            }
             $index++;
         }
 
         $route = $this->store_url;
-        $route .= ($uri[0] == '/') ? $uri : '/'.$uri;
-        $route .= (strpos($uri, '?') == false ? '?' : '&').$parameters;
+        $route .= ($uri[0] == '/') ? $uri : '/' . $uri;
+        $route .= (strpos($uri, '?') == false ? '?' : '&') . $parameters;
 
         return $route;
     }
 
     /**
-    * @param $route Route used to query. ie: /order.
-    * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-    * @return Acenda\Response
-    */
-    public function get($route, $data=[]){
+     * @param $route Route used to query. ie: /order.
+     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Acenda\Response
+     */
+    public function get($route, $data = [])
+    {
         return $this->performRequest($route, 'GET', $data);
     }
 
     /**
-    * @param $route Route used to query. ie: /order.
-    * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-    * @return Acenda\Response
-    */
-    public function post($route, $data=[],$files=[]){
+     * @param $route Route used to query. ie: /order.
+     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Acenda\Response
+     */
+    public function post($route, $data = [], $files = [])
+    {
         return $result = $this->performRequest($route, 'POST', $data, $files);
     }
 
     /**
-    * @param $route Route used to query. ie: /order.
-    * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-    * @return Acenda\Response
-    */
-    public function put($route, $data=[]){
+     * @param $route Route used to query. ie: /order.
+     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Acenda\Response
+     */
+    public function put($route, $data = [])
+    {
         return $this->performRequest($route, 'PUT', $data);
     }
 
     /**
-    * @param $route Route used to query. ie: /order.
-    * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-    * @return Acenda\Response
-    */
-    public function delete($route, $data=[]){
+     * @param $route Route used to query. ie: /order.
+     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Acenda\Response
+     */
+    public function delete($route, $data = [])
+    {
         return $this->performRequest($route, 'DELETE', $data);
     }
 
@@ -131,9 +145,14 @@ class Client
      * @throws Httpful\Exception\ConnectionErrorException
      * @throws \Exception
      */
-    private function performRequest($route, $type, $data=[],$files=[],$handle_throttle=true){
-        if (!is_array($data)){ throw new \Exception('Wrong parameters provided'); }
-        if (Authentication::getExpiration() <= (date("U") - 10)){ $this->refresh(); }
+    private function performRequest($route, $type, $data = [], $files = [], $handle_throttle = true)
+    {
+        if (!is_array($data)) {
+            throw new \Exception('Wrong parameters provided');
+        }
+        if ($this->authentication->getExpiration() <= (date("U") - 10)) {
+            $this->refresh();
+        }
 
         switch (strtoupper($type)) {
             case 'GET':
@@ -146,7 +165,7 @@ class Client
                 break;
             case 'POST':
                 $url = $this->generate_query($route);
-                if(count($files)) {
+                if (count($files)) {
                     $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->send();
                 } else {
                     $response = $this->httpful->post($url, json_encode($data))->sendsJson()->send();
@@ -167,11 +186,11 @@ class Client
                 $this->throttle_iteration = 1;
                 return new Response($response);
             case 429:
-                if($handle_throttle){
+                if ($handle_throttle) {
                     $this->throttle();
                     $this->throttle_iteration++;
-                    $this->performRequest($route, $type, $data=[],$files=[],$handle_throttle);
-                }else{
+                    $this->performRequest($route, $type, $data = [], $files = [], $handle_throttle);
+                } else {
                     return new Response($response);
                 }
             default:
@@ -179,8 +198,9 @@ class Client
         }
     }
 
-    private function throttle(){
-        sleep(pow(2,$this->throttle_iteration));
+    private function throttle()
+    {
+        sleep(pow(2, $this->throttle_iteration));
 
     }
 }

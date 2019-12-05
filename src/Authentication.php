@@ -4,83 +4,60 @@ namespace Acenda;
 use Httpful;
 
 class Authentication{
-    private static $instance;
+    private static $instances;
 
     private $access_token;
     private $expires;
     private $scope;
     private $token_type;
 
-    private static $client_id;
-    private static $client_secret;
-    private static $httpful;
+    private $client_id;
+    private $client_secret;
+    private $httpful;
 
     /**
      * @return bool
      */
-    private static function generation(){
+    private function generation(){
         //Give us 10 seconds of padding, which should be plenty. This method is called every request, so the token
         //should be used within microseconds of this method.
-        if (empty(static::$instance) || static::$instance->expires <= time() + 10){
-            static::$instance = new Authentication();
+        if (empty($this->expires) || $this->expires <= time() + 10){
+            $this->generateToken();
         }
 
         return (true);
     }
 
     /**
-     * @param $client_id Client ID mandatory for
-     * @param $client_secret
-     * @param $httpful
-     * @return bool
+     * @return string
      */
-    public static function init($client_id, $client_secret, Httpful\Request $httpful){
-        static::$instance = null;
-        static::$client_id = $client_id;
-        static::$client_secret = $client_secret;
-        static::$httpful = $httpful;
-
-        return (true);
+    public function getToken(){
+        $this->generation();
+        return $this->access_token;
     }
 
     /**
-     * @return token
+     * @return string
      */
-    public static function getInstance(){
-        static::generation();
-        return static::$instance;
+    public function getType(){
+        $this->generation();
+        return $this->token_type;
     }
 
     /**
-     * @return token
+     * @return array
      */
-    public static function getToken(){
-        static::generation();
-        return static::$instance->access_token;
+    public function getScope(){
+        $this->generation();
+        return explode('|', $this->scope);
     }
 
     /**
-     * @return token type
+     * @return integer
      */
-    public static function getType(){
-        static::generation();
-        return static::$instance->token_type;
-    }
-
-    /**
-     * @return scopes
-     */
-    public static function getScope(){
-        static::generation();
-        return explode('|', static::$instance->scope);
-    }
-
-    /**
-     * @return expiration time in timestamp
-     */
-    public static function getExpiration(){
-        static::generation();
-        return static::$instance->expires;
+    public function getExpiration(){
+        $this->generation();
+        return $this->expires;
     }
 
     /**
@@ -94,7 +71,7 @@ class Authentication{
     }
 
     /**
-     * @return URL
+     * @return string
      */
     private function getUrl(){
         switch(isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null){
@@ -116,9 +93,9 @@ class Authentication{
     * @throws AcendaException
     * @return boolean
     */
-    public static function refresh(){
-        static::generation();
-        static::generateToken();
+    public function refresh(){
+        $this->generation();
+        $this->generateToken();
 
         return true;
     }
@@ -127,9 +104,9 @@ class Authentication{
     * @throws AcendaException
     */
     private function generateToken(){
-        $response = static::$httpful->post($this->getUrl().'/oauth/token', json_encode([
-            'client_id' => static::$client_id,
-            'client_secret' => static::$client_secret,
+        $response = $this->httpful->post($this->getUrl().'/oauth/token', json_encode([
+            'client_id' => $this->client_id,
+            'client_secret' => $this->client_secret,
             'grant_type' => 'client_credentials'
         ]))->sendsJson()->send();
 
@@ -143,10 +120,13 @@ class Authentication{
         }
     }
 
-    protected function __construct(){
-        if (empty(static::$client_id) || empty(static::$client_secret) || empty(static::$httpful)){
-            throw new \Exception("The Authentication class must be initialized before instanciation.");
+    public function __construct($client_id, $client_secret){
+        if (empty($client_id) || empty($client_secret)){
+            throw new \Exception("Please provide client_id and client_secret");
         }else{
+            $this->client_id = $client_id;
+            $this->client_secret = $client_secret;
+            $this->httpful = Httpful\Request::init();
             $this->generateToken();
         }
     }
