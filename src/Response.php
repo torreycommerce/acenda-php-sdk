@@ -18,7 +18,7 @@ class Response{
      */
     public function __construct(Httpful\Response $response){
         $this->code = $response->code;
-        $this->headers = $response->headers;
+        $this->headers = $response->headers->toArray();
         $this->body = $response->body;
     }
 }
