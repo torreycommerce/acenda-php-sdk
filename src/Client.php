@@ -11,13 +11,9 @@ use Httpful;
  */
 class Client
 {
-    private $route;
-    private $store_name;
     private $store_url;
-    private $acenda_url;
     private $httpful;
     private $throttle_iteration = 1;
-    private $auth_cache = [];
     private $authentication;
 
 
@@ -62,12 +58,11 @@ class Client
                 break;
         }
 
-        return (true);
+        return true;
     }
 
     /**
-     * @return bool
-     * @throws AcendaException
+     * @return string
      */
     private function generate_query($uri, $params = [])
     {
@@ -97,8 +92,9 @@ class Client
 
     /**
      * @param $route Route used to query. ie: /order.
-     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-     * @return Acenda\Response
+     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Response
+     * @throws Httpful\Exception\ConnectionErrorException
      */
     public function get($route, $data = [])
     {
@@ -107,8 +103,10 @@ class Client
 
     /**
      * @param $route Route used to query. ie: /order.
-     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-     * @return Acenda\Response
+     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @param array $files
+     * @return Response
+     * @throws Httpful\Exception\ConnectionErrorException
      */
     public function post($route, $data = [], $files = [])
     {
@@ -117,8 +115,9 @@ class Client
 
     /**
      * @param $route Route used to query. ie: /order.
-     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-     * @return Acenda\Response
+     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Response
+     * @throws Httpful\Exception\ConnectionErrorException
      */
     public function put($route, $data = [])
     {
@@ -127,8 +126,9 @@ class Client
 
     /**
      * @param $route Route used to query. ie: /order.
-     * @param $data Query attributes. ie: ["query" => "*", "limit" => 1].
-     * @return Acenda\Response
+     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @return Response
+     * @throws Httpful\Exception\ConnectionErrorException
      */
     public function delete($route, $data = [])
     {
@@ -140,7 +140,7 @@ class Client
      * @param $route
      * @param $type
      * @param $data
-     * @return array
+     * @return Response
      * @throws \Exception
      * @throws Httpful\Exception\ConnectionErrorException
      * @throws \Exception
@@ -149,9 +149,6 @@ class Client
     {
         if (!is_array($data)) {
             throw new \Exception('Wrong parameters provided');
-        }
-        if ($this->authentication->getExpiration() <= (date("U") - 10)) {
-            $this->refresh();
         }
 
         switch (strtoupper($type)) {
@@ -185,11 +182,12 @@ class Client
             case 201:
                 $this->throttle_iteration = 1;
                 return new Response($response);
+                break;
             case 429:
                 if ($handle_throttle) {
                     $this->throttle();
                     $this->throttle_iteration++;
-                    $this->performRequest($route, $type, $data = [], $files = [], $handle_throttle);
+                    return $this->performRequest($route, $type, $data = [], $files = [], $handle_throttle);
                 } else {
                     return new Response($response);
                 }
