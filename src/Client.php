@@ -186,7 +186,7 @@ class Client
                 if ($handle_throttle) {
                     $this->throttle();
                     $this->throttle_iteration++;
-                    return $this->performRequest($route, $verb, $data = [], $files = [], $handle_throttle);
+                    return $this->performRequest($route, $verb, $data, $files, $handle_throttle);
                 } else {
                     return new Response($response);
                 }
