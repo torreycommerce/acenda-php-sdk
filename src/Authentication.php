@@ -17,6 +17,7 @@ class Authentication{
 
     /**
      * @return bool
+     * @throws AcendaException
      */
     private function generation(){
         //Give us 10 seconds of padding, which should be plenty. This method is called every request, so the token
@@ -30,6 +31,7 @@ class Authentication{
 
     /**
      * @return string
+     * @throws AcendaException
      */
     public function getToken(){
         $this->generation();
@@ -38,6 +40,7 @@ class Authentication{
 
     /**
      * @return string
+     * @throws AcendaException
      */
     public function getType(){
         $this->generation();
@@ -46,6 +49,7 @@ class Authentication{
 
     /**
      * @return array
+     * @throws AcendaException
      */
     public function getScope(){
         $this->generation();
@@ -54,6 +58,7 @@ class Authentication{
 
     /**
      * @return integer
+     * @throws AcendaException
      */
     public function getExpiration(){
         $this->generation();
@@ -61,11 +66,11 @@ class Authentication{
     }
 
     /**
-     * @param $data StdClass of the request received by token generation
+     * @param \StdClass $data StdClass of the request received by token generation
      */
     private function handleSuccess(\StdClass $data){
         $this->access_token = $data->access_token;
-        $this->expires = (date("U") + $data->expires_in);
+        $this->expires = (time() + $data->expires_in);
         $this->scope = $data->scope;
         $this->token_type = $data->token_type;
     }
@@ -85,8 +90,6 @@ class Authentication{
                 return "https://acenda.com";
                 break;
         }
-
-        return (null);
     }
 
     /**
@@ -113,11 +116,11 @@ class Authentication{
         switch ($response->code){
             case 200:
                 $this->handleSuccess($response->body);
-                return true;
                 break;
             default:
                 throw new AcendaException($response->code, $response->body);
         }
+        return true;
     }
 
     public function __construct($client_id, $client_secret){
