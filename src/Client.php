@@ -36,12 +36,8 @@ class Client
         $this->generateStoreUrl($store_name);
     }
 
-    private function refresh()
-    {
-        $this->authentication->refresh();
-    }
-
     /**
+     * @param $name
      * @return bool
      */
     private function generateStoreUrl($name)
@@ -62,6 +58,8 @@ class Client
     }
 
     /**
+     * @param $uri
+     * @param array $params
      * @return string
      */
     private function generate_query($uri, $params = [])
@@ -91,7 +89,7 @@ class Client
     }
 
     /**
-     * @param $route Route used to query. ie: /order.
+     * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
      * @throws Httpful\Exception\ConnectionErrorException
@@ -102,7 +100,7 @@ class Client
     }
 
     /**
-     * @param $route Route used to query. ie: /order.
+     * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @param array $files
      * @return Response
@@ -114,7 +112,7 @@ class Client
     }
 
     /**
-     * @param $route Route used to query. ie: /order.
+     * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
      * @throws Httpful\Exception\ConnectionErrorException
@@ -125,7 +123,7 @@ class Client
     }
 
     /**
-     * @param $route Route used to query. ie: /order.
+     * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
      * @throws Httpful\Exception\ConnectionErrorException
@@ -137,21 +135,21 @@ class Client
 
 
     /**
-     * @param $route
-     * @param $type
-     * @param $data
+     * @param string $route
+     * @param string $verb
+     * @param array $data
+     * @param array $files
+     * @param bool $handle_throttle
      * @return Response
-     * @throws \Exception
      * @throws Httpful\Exception\ConnectionErrorException
-     * @throws \Exception
      */
-    private function performRequest($route, $type, $data = [], $files = [], $handle_throttle = true)
+    private function performRequest($route, $verb = 'GET', $data = [], $files = [], $handle_throttle = true)
     {
         if (!is_array($data)) {
             throw new \Exception('Wrong parameters provided');
         }
 
-        switch (strtoupper($type)) {
+        switch (strtoupper($verb)) {
             case 'GET':
                 $url = $this->generate_query($route, $data);
                 $response = $this->httpful->get($url)->send();
@@ -173,13 +171,14 @@ class Client
                 $response = $this->httpful->delete($url)->sendsJson()->send();
                 break;
             default:
-                throw new \Exception('Verb not recognized yet');
+                throw new \InvalidArgumentException("Verb $verb not recognized yet");
         }
 
         //Default in this switch is failure. All failures should fall through to default.
         switch ($response->code) {
             case 200:
             case 201:
+                // Why are we resetting throttle iteration here? The throttle in this thing is whack.
                 $this->throttle_iteration = 1;
                 return new Response($response);
                 break;
@@ -187,7 +186,7 @@ class Client
                 if ($handle_throttle) {
                     $this->throttle();
                     $this->throttle_iteration++;
-                    return $this->performRequest($route, $type, $data = [], $files = [], $handle_throttle);
+                    return $this->performRequest($route, $verb, $data = [], $files = [], $handle_throttle);
                 } else {
                     return new Response($response);
                 }
