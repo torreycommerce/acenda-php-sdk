@@ -11,12 +11,14 @@ use Httpful;
 class Response{
     public $code;
     public $body;
+    public $headers;
 
     /**
      * @param Httpful\Response $response
      */
     public function __construct(Httpful\Response $response){
         $this->code = $response->code;
+        $this->headers = $response->headers->toArray();
         $this->body = $response->body;
     }
 }
