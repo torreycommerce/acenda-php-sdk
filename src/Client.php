@@ -64,8 +64,6 @@ class Client
      */
     private function generate_query($uri, $params = [])
     {
-        $params = array_merge(['access_token' => $this->authentication->getToken()], $params);
-
         $parameters = "";
         $index = 0;
         foreach ($params as $k => $v) {
