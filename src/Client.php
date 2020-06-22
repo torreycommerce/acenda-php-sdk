@@ -156,19 +156,19 @@ class Client
                 break;
             case 'PUT':
                 $url = $this->generate_query($route);
-                $response = $this->httpful->put($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
+                $response = $this->httpful->put($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
                 break;
             case 'POST':
                 $url = $this->generate_query($route);
                 if(count($files)) {
-                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
+                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
                 } else {
-                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
+                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
                 }
                 break;
             case 'DELETE':
                 $url = $this->generate_query($route, $data);
-                $response = $this->httpful->delete($url)->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
+                $response = $this->httpful->delete($url)->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
                 break;
             default:
                 throw new \Exception('Verb not recognized yet');
