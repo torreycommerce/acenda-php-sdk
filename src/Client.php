@@ -152,26 +152,26 @@ class Client
         switch (strtoupper($verb)) {
             case 'GET':
                 $url = $this->generate_query($route, $data);
-                $response = $this->httpful->get($url)->send();
+                $response = $this->httpful->get($url)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
                 break;
             case 'PUT':
                 $url = $this->generate_query($route);
-                $response = $this->httpful->put($url, json_encode($data))->sendsJson()->send();
+                $response = $this->httpful->put($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
                 break;
             case 'POST':
                 $url = $this->generate_query($route);
-                if (count($files)) {
-                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->send();
+                if(count($files)) {
+                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
                 } else {
-                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->send();
+                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
                 }
                 break;
             case 'DELETE':
                 $url = $this->generate_query($route, $data);
-                $response = $this->httpful->delete($url)->sendsJson()->send();
+                $response = $this->httpful->delete($url)->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->ssend();
                 break;
             default:
-                throw new \InvalidArgumentException("Verb $verb not recognized yet");
+                throw new \Exception('Verb not recognized yet');
         }
 
         //Default in this switch is failure. All failures should fall through to default.
