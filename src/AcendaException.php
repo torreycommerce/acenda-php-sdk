@@ -13,8 +13,8 @@ class AcendaException extends Exception{
     public $body;
 
     /**
-     * @param $code HTTP code
-     * @param $body Content of the body.
+     * @param string|int $code HTTP Code
+     * @param string $body content of the body.
      */
     public function __construct($code, $body){
         $this->code = $code;

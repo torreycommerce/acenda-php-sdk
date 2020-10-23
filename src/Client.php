@@ -15,6 +15,11 @@ class Client
     private $httpful;
     private $throttle_iteration = 1;
     private $authentication;
+    /*
+     * Retry attempt tracking
+     */
+    private $retry_count = 0;
+    private $max_retries;
 
 
     /**
@@ -23,9 +28,10 @@ class Client
      * @param $client_secret
      * @param $store_name
      * @param bool $bypass_ssl
+     * @param int $max_retries
      * @throws \Exception
      */
-    public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false)
+    public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false, $max_retries = 5)
     {
         $this->httpful = Httpful\Request::init();
 
@@ -34,6 +40,7 @@ class Client
         }
         $this->authentication = new Authentication($client_id, $client_secret);
         $this->generateStoreUrl($store_name);
+        $this->max_retries = $max_retries;
     }
 
     /**
@@ -90,7 +97,7 @@ class Client
      * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
-     * @throws Httpful\Exception\ConnectionErrorException
+     * @throws AcendaException
      */
     public function get($route, $data = [])
     {
@@ -102,7 +109,7 @@ class Client
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @param array $files
      * @return Response
-     * @throws Httpful\Exception\ConnectionErrorException
+     * @throws AcendaException
      */
     public function post($route, $data = [], $files = [])
     {
@@ -113,7 +120,7 @@ class Client
      * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
-     * @throws Httpful\Exception\ConnectionErrorException
+     * @throws AcendaException
      */
     public function put($route, $data = [])
     {
@@ -124,7 +131,7 @@ class Client
      * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @return Response
-     * @throws Httpful\Exception\ConnectionErrorException
+     * @throws AcendaException
      */
     public function delete($route, $data = [])
     {
@@ -139,7 +146,7 @@ class Client
      * @param array $files
      * @param bool $handle_throttle
      * @return Response
-     * @throws Httpful\Exception\ConnectionErrorException
+     * @throws AcendaException
      */
     private function performRequest($route, $verb = 'GET', $data = [], $files = [], $handle_throttle = true)
     {
@@ -150,33 +157,44 @@ class Client
         switch (strtoupper($verb)) {
             case 'GET':
                 $url = $this->generate_query($route, $data);
-                $response = $this->httpful->get($url)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
+                $request = $this->httpful->get($url);
                 break;
             case 'PUT':
                 $url = $this->generate_query($route);
-                $response = $this->httpful->put($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
+                $request = $this->httpful->put($url, json_encode($data))->sendsJson();
                 break;
             case 'POST':
                 $url = $this->generate_query($route);
-                if(count($files)) {
-                    $response = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files)->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
+                if (count($files)) {
+                    $request = $this->httpful->post($url)->body($data)->sendsType(Httpful\Mime::FORM)->attach($files);
                 } else {
-                    $response = $this->httpful->post($url, json_encode($data))->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
+                    $request = $this->httpful->post($url, json_encode($data))->sendsJson();
                 }
                 break;
             case 'DELETE':
                 $url = $this->generate_query($route, $data);
-                $response = $this->httpful->delete($url)->sendsJson()->addHeaders(['AUTHORIZATION'=>'Bearer '.Authentication::getToken()])->send();
+                $request = $this->httpful->delete($url)->sendsJson();
                 break;
             default:
                 throw new \Exception('Verb not recognized yet');
         }
+        $request->addHeaders(['AUTHORIZATION' => 'Bearer ' . $this->authentication->getToken()]);
+        try {
+            $response = $request->send();
+        } catch (Httpful\Exception\ConnectionErrorException $e) {
+            if ($this->retry_count >= $this->max_retries) {
+                throw new AcendaException(500, "Connection Error Exception, out of retries: " . $e->getMessage());
+            }
+            $this->retry_count++;
+            return $this->performRequest($route, $verb, $data, $files, $handle_throttle);
+        }
+        $this->retry_count = 0;
 
         //Default in this switch is failure. All failures should fall through to default.
         switch ($response->code) {
             case 200:
             case 201:
-                // Why are we resetting throttle iteration here? The throttle in this thing is whack.
+                // Reset throttle iterations since we got through
                 $this->throttle_iteration = 1;
                 return new Response($response);
                 break;
@@ -196,6 +214,5 @@ class Client
     private function throttle()
     {
         sleep(pow(2, $this->throttle_iteration));
-
     }
 }
