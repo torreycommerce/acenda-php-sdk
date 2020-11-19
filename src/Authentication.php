@@ -130,6 +130,10 @@ class Authentication{
             $this->client_id = $client_id;
             $this->client_secret = $client_secret;
             $this->httpful = Httpful\Request::init();
+            $this->httpful->additional_curl_opts = [
+                CURLOPT_NOPROGRESS => false,
+                CURLOPT_PROGRESSFUNCTION => function () {}
+            ];
             $this->generateToken();
         }
     }

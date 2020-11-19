@@ -34,6 +34,10 @@ class Client
     public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false, $max_retries = 5)
     {
         $this->httpful = Httpful\Request::init();
+        $this->httpful->additional_curl_opts = [
+            CURLOPT_NOPROGRESS => false,
+            CURLOPT_PROGRESSFUNCTION => function () {}
+        ];
 
         if (!$bypass_ssl) {
             $this->httpful = $this->httpful->withStrictSSL();
