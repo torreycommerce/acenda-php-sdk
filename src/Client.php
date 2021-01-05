@@ -142,6 +142,10 @@ class Client
         return $this->performRequest($route, 'DELETE', $data);
     }
 
+    public function getCurrentToken(){
+        return $this->authentication->getToken();
+    }
+
 
     /**
      * @param string $route
