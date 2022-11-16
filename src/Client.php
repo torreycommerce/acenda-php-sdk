@@ -12,6 +12,9 @@ use Httpful;
 class Client
 {
     private $store_url;
+    /**
+     * @var Httpful\Request
+     */
     private $httpful;
     private $throttle_iteration = 1;
     private $authentication;
@@ -100,24 +103,38 @@ class Client
     /**
      * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @param array $headers
      * @return Response
      * @throws AcendaException
      */
-    public function get($route, $data = [])
+    public function get($route, $data = [], $headers = [])
     {
-        return $this->performRequest($route, 'GET', $data);
+        return $this->performRequest($route, 'GET', $data, [], $headers);
     }
 
     /**
      * @param string $route Route used to query. ie: /order.
      * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
      * @param array $files
+     * @param array $headers
      * @return Response
      * @throws AcendaException
      */
-    public function post($route, $data = [], $files = [])
+    public function post($route, $data = [], $files = [], $headers = [])
     {
-        return $result = $this->performRequest($route, 'POST', $data, $files);
+        return $result = $this->performRequest($route, 'POST', $data, $files, $headers);
+    }
+
+    /**
+     * @param string $route Route used to query. ie: /order.
+     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
+     * @param array $headers
+     * @return Response
+     * @throws AcendaException
+     */
+    public function put($route, $data = [], $headers = [])
+    {
+        return $this->performRequest($route, 'PUT', $data, [], $headers);
     }
 
     /**
@@ -126,20 +143,9 @@ class Client
      * @return Response
      * @throws AcendaException
      */
-    public function put($route, $data = [])
+    public function delete($route, $data = [], $headers = [])
     {
-        return $this->performRequest($route, 'PUT', $data);
-    }
-
-    /**
-     * @param string $route Route used to query. ie: /order.
-     * @param array $data Query attributes. ie: ["query" => "*", "limit" => 1].
-     * @return Response
-     * @throws AcendaException
-     */
-    public function delete($route, $data = [])
-    {
-        return $this->performRequest($route, 'DELETE', $data);
+        return $this->performRequest($route, 'DELETE', $data, [], $headers);
     }
 
     public function getCurrentToken(){
@@ -152,11 +158,12 @@ class Client
      * @param string $verb
      * @param array $data
      * @param array $files
+     * @param array $additional_headers
      * @param bool $handle_throttle
      * @return Response
      * @throws AcendaException
      */
-    private function performRequest($route, $verb = 'GET', $data = [], $files = [], $handle_throttle = true)
+    private function performRequest($route, $verb = 'GET', $data = [], $files = [], $additional_headers = [], $handle_throttle = true)
     {
         if (!is_array($data)) {
             throw new \Exception('Wrong parameters provided');
@@ -186,6 +193,9 @@ class Client
             default:
                 throw new \Exception('Verb not recognized yet');
         }
+        if($additional_headers){
+            $request->addHeaders($additional_headers);
+        }
         $request->addHeaders(['AUTHORIZATION' => 'Bearer ' . $this->authentication->getToken()]);
         try {
             $response = $request->send();
@@ -193,8 +203,10 @@ class Client
             if ($this->retry_count >= $this->max_retries) {
                 throw new AcendaException(500, "Connection Error Exception, out of retries: " . $e->getMessage());
             }
+            // Sleep 5 seconds
+            sleep(5);
             $this->retry_count++;
-            return $this->performRequest($route, $verb, $data, $files, $handle_throttle);
+            return $this->performRequest($route, $verb, $data, $files, $additional_headers, $handle_throttle);
         }
         $this->retry_count = 0;
 
@@ -210,7 +222,7 @@ class Client
                 if ($handle_throttle) {
                     $this->throttle();
                     $this->throttle_iteration++;
-                    return $this->performRequest($route, $verb, $data, $files, $handle_throttle);
+                    return $this->performRequest($route, $verb, $data, $files, $additional_headers, $handle_throttle);
                 } else {
                     return new Response($response);
                 }
