@@ -11,6 +11,7 @@ use Httpful;
  */
 class Client
 {
+    private $acenda_mode = null;
     private $store_url;
     /**
      * @var Httpful\Request
@@ -34,7 +35,7 @@ class Client
      * @param int $max_retries
      * @throws \Exception
      */
-    public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false, $max_retries = 5)
+    public function __construct($client_id, $client_secret, $store_name, $bypass_ssl = false, $max_retries = 5, $acenda_mode = null)
     {
         $this->httpful = Httpful\Request::init();
         $this->httpful->additional_curl_opts = [
@@ -45,9 +46,10 @@ class Client
         if (!$bypass_ssl) {
             $this->httpful = $this->httpful->withStrictSSL();
         }
-        $this->authentication = new Authentication($client_id, $client_secret);
+        $this->authentication = new Authentication($client_id, $client_secret, $acenda_mode);
         $this->generateStoreUrl($store_name);
         $this->max_retries = $max_retries;
+        $this->acenda_mode = $acenda_mode;
     }
 
     /**
@@ -56,7 +58,11 @@ class Client
      */
     private function generateStoreUrl($name)
     {
-        switch ((isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null)) {
+        $server_mode = $this->acenda_mode;
+        if(!$server_mode){
+            $server_mode = $_SERVER['ACENDA_MODE'] ?? null;
+        }
+        switch ($server_mode) {
             case "acendavm":
                 $this->store_url = "http://admin.acendev/preview/" . md5($name) . "/api";
                 break;

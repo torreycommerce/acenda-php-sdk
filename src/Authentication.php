@@ -1,11 +1,13 @@
 <?php
+
 namespace Acenda;
 
 use Httpful;
 
-class Authentication{
+class Authentication
+{
     private static $instances;
-
+    private $acenda_mode = null;
     private $access_token;
     private $expires;
     private $scope;
@@ -19,10 +21,11 @@ class Authentication{
      * @return bool
      * @throws AcendaException
      */
-    private function generation(){
+    private function generation()
+    {
         //Give us 10 seconds of padding, which should be plenty. This method is called every request, so the token
         //should be used within microseconds of this method.
-        if (empty($this->expires) || $this->expires <= time() + 10){
+        if (empty($this->expires) || $this->expires <= time() + 10) {
             $this->generateToken();
         }
 
@@ -33,7 +36,8 @@ class Authentication{
      * @return string
      * @throws AcendaException
      */
-    public function getToken(){
+    public function getToken()
+    {
         $this->generation();
         return $this->access_token;
     }
@@ -42,7 +46,8 @@ class Authentication{
      * @return string
      * @throws AcendaException
      */
-    public function getType(){
+    public function getType()
+    {
         $this->generation();
         return $this->token_type;
     }
@@ -51,7 +56,8 @@ class Authentication{
      * @return array
      * @throws AcendaException
      */
-    public function getScope(){
+    public function getScope()
+    {
         $this->generation();
         return explode('|', $this->scope);
     }
@@ -60,7 +66,8 @@ class Authentication{
      * @return integer
      * @throws AcendaException
      */
-    public function getExpiration(){
+    public function getExpiration()
+    {
         $this->generation();
         return $this->expires;
     }
@@ -68,7 +75,8 @@ class Authentication{
     /**
      * @param \StdClass $data StdClass of the request received by token generation
      */
-    private function handleSuccess(\StdClass $data){
+    private function handleSuccess(\StdClass $data)
+    {
         $this->access_token = $data->access_token;
         $this->expires = (time() + $data->expires_in);
         $this->scope = $data->scope;
@@ -78,25 +86,28 @@ class Authentication{
     /**
      * @return string
      */
-    private function getUrl(){
-        switch(isset($_SERVER['ACENDA_MODE']) ? $_SERVER['ACENDA_MODE'] : null){
+    private function getUrl()
+    {
+        $acenda_mode = $this->acenda_mode ?? null;
+        if (!$acenda_mode) {
+            $acenda_mode = $_SERVER['ACENDA_MODE'] ?? null;
+        }
+        switch ($acenda_mode) {
             case "acendavm":
                 return "http://acenda.acendev";
-                break;
             case "development":
                 return "https://acenda.acenda.devserver";
-                break;
             default:
                 return "https://acenda.com";
-                break;
         }
     }
 
     /**
-    * @throws AcendaException
-    * @return boolean
-    */
-    public function refresh(){
+     * @return boolean
+     * @throws AcendaException
+     */
+    public function refresh()
+    {
         $this->generation();
         $this->generateToken();
 
@@ -104,16 +115,17 @@ class Authentication{
     }
 
     /**
-    * @throws AcendaException
-    */
-    private function generateToken(){
-        $response = $this->httpful->post($this->getUrl().'/oauth/token', json_encode([
+     * @throws AcendaException
+     */
+    private function generateToken()
+    {
+        $response = $this->httpful->post($this->getUrl() . '/oauth/token', json_encode([
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
             'grant_type' => 'client_credentials'
         ]))->sendsJson()->send();
 
-        switch ($response->code){
+        switch ($response->code) {
             case 200:
                 $this->handleSuccess($response->body);
                 break;
@@ -123,16 +135,19 @@ class Authentication{
         return true;
     }
 
-    public function __construct($client_id, $client_secret){
-        if (empty($client_id) || empty($client_secret)){
+    public function __construct($client_id, $client_secret, $acenda_mode = null)
+    {
+        $this->acenda_mode = $acenda_mode;
+        if (empty($client_id) || empty($client_secret)) {
             throw new \Exception("Please provide client_id and client_secret");
-        }else{
+        } else {
             $this->client_id = $client_id;
             $this->client_secret = $client_secret;
             $this->httpful = Httpful\Request::init();
             $this->httpful->additional_curl_opts = [
                 CURLOPT_NOPROGRESS => false,
-                CURLOPT_PROGRESSFUNCTION => function () {}
+                CURLOPT_PROGRESSFUNCTION => function () {
+                }
             ];
             $this->generateToken();
         }
