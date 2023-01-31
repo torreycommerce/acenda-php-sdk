@@ -46,10 +46,10 @@ class Client
         if (!$bypass_ssl) {
             $this->httpful = $this->httpful->withStrictSSL();
         }
+        $this->acenda_mode = $acenda_mode;
         $this->authentication = new Authentication($client_id, $client_secret, $acenda_mode);
         $this->generateStoreUrl($store_name);
         $this->max_retries = $max_retries;
-        $this->acenda_mode = $acenda_mode;
     }
 
     /**
