@@ -96,7 +96,7 @@ class Authentication
             case "acendavm":
                 return "http://acenda.acendev";
             case "development":
-                return "https://acenda.acenda.devserver";
+                return "http://acenda.dev.acenda.net";
             default:
                 return "https://acenda.com";
         }

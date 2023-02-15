@@ -67,7 +67,7 @@ class Client
                 $this->store_url = "http://admin.acendev/preview/" . md5($name) . "/api";
                 break;
             case "development":
-                $this->store_url = "https://admin.acenda.devserver/preview/" . md5($name) . "/api";
+                $this->store_url = "http://admin.dev.acenda.net/preview/" . md5($name) . "/api";
                 break;
             default:
                 $this->store_url = "https://admin.acenda.com/preview/" . md5($name) . "/api";
