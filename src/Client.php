@@ -19,10 +19,6 @@ class Client
     private $httpful;
     private $throttle_iteration = 1;
     private $authentication;
-    /*
-     * Retry attempt tracking
-     */
-    private $retry_count = 0;
     private $max_retries;
 
 
@@ -40,7 +36,8 @@ class Client
         $this->httpful = Httpful\Request::init();
         $this->httpful->additional_curl_opts = [
             CURLOPT_NOPROGRESS => false,
-            CURLOPT_PROGRESSFUNCTION => function () {}
+            CURLOPT_PROGRESSFUNCTION => function () {
+            }
         ];
 
         if (!$bypass_ssl) {
@@ -59,7 +56,7 @@ class Client
     private function generateStoreUrl($name)
     {
         $server_mode = $this->acenda_mode;
-        if(!$server_mode){
+        if (!$server_mode) {
             $server_mode = $_SERVER['ACENDA_MODE'] ?? null;
         }
         switch ($server_mode) {
@@ -154,7 +151,8 @@ class Client
         return $this->performRequest($route, 'DELETE', $data, [], $headers);
     }
 
-    public function getCurrentToken(){
+    public function getCurrentToken()
+    {
         return $this->authentication->getToken();
     }
 
@@ -199,22 +197,11 @@ class Client
             default:
                 throw new \Exception('Verb not recognized yet');
         }
-        if($additional_headers){
+        if ($additional_headers) {
             $request->addHeaders($additional_headers);
         }
         $request->addHeaders(['AUTHORIZATION' => 'Bearer ' . $this->authentication->getToken()]);
-        try {
-            $response = $request->send();
-        } catch (Httpful\Exception\ConnectionErrorException $e) {
-            if ($this->retry_count >= $this->max_retries) {
-                throw new AcendaException(500, "Connection Error Exception, out of retries: " . $e->getMessage());
-            }
-            // Sleep 5 seconds
-            sleep(5);
-            $this->retry_count++;
-            return $this->performRequest($route, $verb, $data, $files, $additional_headers, $handle_throttle);
-        }
-        $this->retry_count = 0;
+        $response = $request->send();
 
         //Default in this switch is failure. All failures should fall through to default.
         switch ($response->code) {
