@@ -35,7 +35,7 @@
   "homepage": "http://acenda.com",
   "require": {
     "php": ">=7.0",
-    "nategood/httpful": "^0.3.2",
+    "nategood/httpful": "^1.0.0",
     "ext-json": "*"
   }
 }
