@@ -11,18 +11,6 @@
   "type": "sdk",
   "authors": [
     {
-      "name": "Thiebaud Ernstberger",
-      "email": "thiebaud@acenda.com"
-    },
-    {
-      "name": "Yoann Jaspar",
-      "email": "yoannj@acenda.com"
-    },
-    {
-      "name": "Ahmet Tok",
-      "email": "ahmett@acenda.com"
-    },
-    {
       "name": "Brandon Allhands",
       "email": "brandon@brandonallhands.com"
     }
@@ -35,7 +23,8 @@
   "homepage": "http://acenda.com",
   "require": {
     "php": ">=7.0",
-    "nategood/httpful": "^0.3.2",
-    "ext-json": "*"
+    "nategood/httpful": "^1.0.0",
+    "ext-json": "*",
+    "ext-curl": "*"
   }
 }
