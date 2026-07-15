@@ -94,11 +94,11 @@ class Authentication
         }
         switch ($acenda_mode) {
             case "acendavm":
-                return "http://acenda.acendev";
+                return "http://auth.acenda.acendev";
             case "development":
-                return "http://acenda.dev.acenda.net";
+                return "http://auth.acenda.dev.acenda.net";
             default:
-                return "https://acenda.com";
+                return "https://auth.acenda.com";
         }
     }
 
